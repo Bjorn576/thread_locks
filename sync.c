@@ -9,7 +9,7 @@
 
 #include "sync.h"
 #include <stdlib.h>
-
+#include <stdio.h>
 
 /*
  * Spinlock routines
@@ -20,9 +20,9 @@ int my_spinlock_init(my_spinlock_t *lock)
   if(lock != NULL)
   {
     lock->val = 0;
-    return 1;
+    return 0;
   }
-  return 0;
+  return -1;
 }
 
 int my_spinlock_destroy(my_spinlock_t *lock)
@@ -31,6 +31,13 @@ int my_spinlock_destroy(my_spinlock_t *lock)
 
 int my_spinlock_unlock(my_spinlock_t *lock)
 {
+  if(lock != NULL)
+  {
+    lock->val = 0;
+    printf("UNLOCKED\n");
+    return 0;
+  }
+  return -1;
   
 }
 
@@ -38,11 +45,23 @@ int my_spinlock_lockTAS(my_spinlock_t *lock)
 {
   while(tas(&(lock->val)));
   printf("Locked!\n");
+  return 0;
 }
 
 
 int my_spinlock_lockTTAS(my_spinlock_t *lock)
 {
+  while(1)
+  {
+    while(lock->val);
+    if(!tas(&(lock->val)))
+    {
+      printf("LOCKED\n");
+      return 1;  
+    }
+      
+  }
+  return 0;
 }
 
 int my_spinlock_trylock(my_spinlock_t *lock)

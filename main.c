@@ -1,5 +1,7 @@
 #include "main.h"
+#include "sync.h"
 #include <string.h>
+#include <stdio.h>
 
 void *fnC()
 {
@@ -12,7 +14,7 @@ void *fnC()
 
 
 pthread_mutex_t count_mutex;
-
+int numThreads, numItterations, OperationsOutsideCS, OperationsInsideCS, testID;
 
 void *pthreadMutexTest()
 {
@@ -41,6 +43,21 @@ void *pthreadMutexTest()
     }   
 
 
+}
+
+my_spinlock_t spinlock;
+
+
+void *spinlocktest()
+{
+  int c = 0;
+  my_spinlock_lockTAS(&spinlock);
+  int i;
+  for(i=0;i<numItterations;i++)
+  {
+    c++;
+  }
+  my_spinlock_unlock(&spinlock);
 }
 
 int runTest(int testID)
@@ -85,17 +102,32 @@ if (testID == 0 || testID == 1 ) /*Pthread Mutex*/
 
 if(testID == 0 || testID == 2) /*Pthread Spinlock*/
 {
-  printf("Testing SpinLock...\n");
-  my_spinlock_t lock;
-  my_spinlock_init(&lock);
   
-  my_spinlock_lockTAS(&lock);
-  printf("Done!\n");
 }
 
 if(testID == 0 || testID == 3) /*MySpinlockTAS*/
 {
-/* mySpinlock TAS goes here*/
+  my_spinlock_init(&spinlock);
+  pthread_t *threads = (pthread_t* )malloc(sizeof(pthread_t)*numThreads);
+  int rt;
+  int i;
+
+  for(i=0;i<numThreads;i++)
+  {
+    printf("Create thread\n");
+    if( rt=(pthread_create( threads+i, NULL, &spinlocktest, NULL)) )
+    {
+       printf("Thread creation failed: %d\n", rt);
+       return -1;	
+    }
+  }
+  
+  for(i=0;i<numThreads;i++)
+  {
+    pthread_join(threads[i], NULL);
+    printf("Thread joined\n");
+  }
+  printf("DONE TEST ON MY_SPINLOCK\n");
 }
 
 /*....you must implement the other tests....*/
@@ -118,8 +150,9 @@ int processInput(int argc, char *argv[])
 	/*You must write how to parse input from the command line here, your software should default to the values given below if no input is given*/
   int i;
   int tflag, iflag, oflag, cflag, dflag;
-  int numThreads, numItterations, OperationsOutsideCS, OperationsInsideCS, testID;
+  
   tflag = iflag = oflag = cflag = dflag = 0;
+  printf("All these should be 0 %d %d %d %d %d\n", tflag, iflag, oflag, cflag, dflag);
   
   //Custom input values
   for (i=1;i<argc;i++)
@@ -129,27 +162,28 @@ int processInput(int argc, char *argv[])
       numThreads = atoi(argv[i+1]);
       tflag = 1;
     }
-    else if(!strcmp("-i", argv[i]) && i+1 < argc-1)
+    else if(!strcmp("-i", argv[i]) && i+1 < argc)
     {
       numItterations = atoi(argv[i+1]);
       iflag = 1;
     }
-    else if(!strcmp("-o", argv[i]) && i+1 < argc-1)
+    else if(!strcmp("-o", argv[i]) && i+1 < argc)
     {
       OperationsOutsideCS = atoi(argv[i+1]);
       oflag = 1;
     }
-    else if(!strcmp("-c", argv[i]) && i+1 < argc-1)
+    else if(!strcmp("-c", argv[i]) && i+1 < argc)
     {
       OperationsInsideCS = atoi(argv[i+1]);
       cflag = 1;
     }
-    else if(!strcmp("-d", argv[i]) && i+1 < argc-1)
+    else if(!strcmp("-d", argv[i]) && i+1 < argc)
     {
       testID = atoi(argv[i+1]);
       dflag = 1;
     }
   }
+  printf("All these should be 0 %d %d %d %d %d\n", tflag, iflag, oflag, cflag, dflag);
   
   //Set default values if necessary
   if(!tflag)
@@ -159,13 +193,12 @@ int processInput(int argc, char *argv[])
   if(!dflag)
     testID = 2;
   if(!oflag)
-    workOutsideCS = 0;
+    OperationsOutsideCS = 0;
   if(!cflag)
-    workInsideCS = 1;
+    OperationsInsideCS = 1;
+    
   
-  printf("Number of threads is: %d\n", numThreads);
   
-
 	return 0;
 }
 
@@ -180,6 +213,11 @@ int main(int argc, char *argv[])
 	//testAndSetExample(); //Uncomment this line to see how to use TAS
 	
 	processInput(argc,argv);
+  printf("NUMBER OF THREADS: %d\n", numThreads);
+  printf("NUMBER OF ITERATIONS: %d\n", numItterations);
+  printf("NUMBER OF OperationsOutsideCS: %d\n", OperationsOutsideCS);
+  printf("NUMBER OF OperationsInsideCS: %d\n", OperationsInsideCS);
+  printf("TESTID: %d\n", testID);
 	runTest(testID);
 	return 0;
 
