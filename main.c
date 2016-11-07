@@ -50,14 +50,20 @@ my_spinlock_t spinlock;
 
 void *spinlocktest()
 {
-  int c = 0;
-  my_spinlock_lockTAS(&spinlock);
+  
+  int j;
   int i;
   for(i=0;i<numItterations;i++)
   {
-    c++;
+    
+    my_spinlock_lockTAS(&spinlock);
+    for(j=0;j<OperationsInsideCS;j++)
+    {
+      c++;
+    }
+    my_spinlock_unlock(&spinlock);
   }
-  my_spinlock_unlock(&spinlock);
+  
 }
 
 int runTest(int testID)
@@ -107,6 +113,7 @@ if(testID == 0 || testID == 2) /*Pthread Spinlock*/
 
 if(testID == 0 || testID == 3) /*MySpinlockTAS*/
 {
+  c=0
   my_spinlock_init(&spinlock);
   pthread_t *threads = (pthread_t* )malloc(sizeof(pthread_t)*numThreads);
   int rt;

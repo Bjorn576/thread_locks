@@ -66,6 +66,10 @@ int my_spinlock_lockTTAS(my_spinlock_t *lock)
 
 int my_spinlock_trylock(my_spinlock_t *lock)
 {
+  if(lock->val == 1)
+    return 0;
+  else
+    my_spinlock_lockTTAS(lock);
 }
 
 
