@@ -134,6 +134,7 @@ int my_mutex_unlock(my_mutex_t *lock)
       lock->val = 0;
       lock->owner = 0;
       printf("MUTEX UNLOCKED\n");
+      return 0;
     }
   }
 }
@@ -151,6 +152,7 @@ int my_mutex_lock(my_mutex_t *lock)
     while(lock->val);
     if(!tas(&(lock->val)))
     {
+      lock->owner = pthread_self();
       printf("LOCKED\n");
       return 0;  
     }

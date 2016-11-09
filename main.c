@@ -61,6 +61,7 @@ void *mlocktest()
     for(j=0;j<OperationsInsideCS;j++)
     {
       c++;
+      printf("THIS RAN\n");
     }
     my_mutex_unlock(&mlock);
   }
