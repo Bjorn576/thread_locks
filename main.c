@@ -46,8 +46,25 @@ void *pthreadMutexTest()
 }
 
 my_spinlock_t spinlock;
+my_mutex_t mlock;
 
-
+void *mlocktest()
+{
+  int j;
+  int i;
+  for(i=0;i<numItterations;i++)
+  {
+    
+    my_mutex_lock(&mlock);    
+    
+    
+    for(j=0;j<OperationsInsideCS;j++)
+    {
+      c++;
+    }
+    my_mutex_unlock(&mlock);
+  }
+}
 void *spinlocktest()
 {
   
@@ -56,7 +73,10 @@ void *spinlocktest()
   for(i=0;i<numItterations;i++)
   {
     
-    my_spinlock_lockTAS(&spinlock);
+    my_spinlock_lockTAS(&spinlock);    
+    //Test for two locks called by the same thread
+    my_spinlock_lockTAS(&spinlock); 
+    
     for(j=0;j<OperationsInsideCS;j++)
     {
       c++;
@@ -113,7 +133,7 @@ if(testID == 0 || testID == 2) /*Pthread Spinlock*/
 
 if(testID == 0 || testID == 3) /*MySpinlockTAS*/
 {
-  c=0
+  c=0;
   my_spinlock_init(&spinlock);
   pthread_t *threads = (pthread_t* )malloc(sizeof(pthread_t)*numThreads);
   int rt;
@@ -135,6 +155,34 @@ if(testID == 0 || testID == 3) /*MySpinlockTAS*/
     printf("Thread joined\n");
   }
   printf("DONE TEST ON MY_SPINLOCK\n");
+}
+
+if(testID == 0 || testID == 4)
+{
+  //my_mutex_lock testing
+  c=0;
+  my_mutex_init(&mlock);
+  pthread_t *threads = (pthread_t* )malloc(sizeof(pthread_t)*numThreads);
+  int rt;
+  int i;
+
+  for(i=0;i<numThreads;i++)
+  {
+    printf("Create thread\n");
+    if( rt=(pthread_create( threads+i, NULL, &mlocktest, NULL)) )
+    {
+       printf("Thread creation failed: %d\n", rt);
+       return -1;	
+    }
+  }
+  
+  for(i=0;i<numThreads;i++)
+  {
+    pthread_join(threads[i], NULL);
+    printf("Thread joined\n");
+  }
+  printf("DONE TEST ON MY_MUTEX\n");
+  
 }
 
 /*....you must implement the other tests....*/
@@ -164,7 +212,7 @@ int processInput(int argc, char *argv[])
   //Custom input values
   for (i=1;i<argc;i++)
   {
-    if(!strcmp("-t", argv[i]) && i+1 < argc-1)
+    if(!strcmp("-t", argv[i]) && i+1 < argc)
     {
       numThreads = atoi(argv[i+1]);
       tflag = 1;

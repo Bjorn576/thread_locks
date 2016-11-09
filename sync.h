@@ -10,7 +10,8 @@
 #include "atomic_ops.h"
 
 struct my_mutex_struct {
-  /* FILL ME IN! */
+  volatile unsigned long val;
+  volatile unsigned long long int owner;
 };
 
 
@@ -32,6 +33,7 @@ int my_mutex_trylock(my_mutex_t *lock);
 
 struct my_spinlock_struct {
   volatile unsigned long val;
+  volatile unsigned long long int owner;
 };
 
 typedef struct my_spinlock_struct my_spinlock_t;
