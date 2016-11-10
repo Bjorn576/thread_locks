@@ -49,8 +49,10 @@ int my_spinlock_trylock(my_spinlock_t *lock);
 
 /*Spinlock Starts here*/
 
+//2 integers defined for the queue and deqeue values
 struct my_queuelock_struct {
-  /* FILL ME IN! */
+  volatile unsigned long tqueue;
+  volatile unsigned long tdequeue;
 };
 
 typedef struct my_queuelock_struct my_queuelock_t;

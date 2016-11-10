@@ -33,6 +33,7 @@ int my_spinlock_init(my_spinlock_t *lock)
 
 int my_spinlock_destroy(my_spinlock_t *lock)
 {
+  return 0;
 }
 
 int my_spinlock_unlock(my_spinlock_t *lock)
@@ -86,10 +87,9 @@ int my_spinlock_lockTTAS(my_spinlock_t *lock)
     if(!tas(&(lock->val)))
     {
       printf("LOCKED\n");
+      //If a thread is trying to reacquire a lock it already has
       if(lock->owner == tid)
-      {
         return 1;
-      }
       lock->owner = tid;
       //cas(&(lock->owner), 0, tid);
       return 0;  
@@ -201,10 +201,16 @@ int my_mutex_trylock(my_mutex_t *lock)
 
 int my_queuelock_init(my_queuelock_t *lock)
 {
+  if(lock == NULL)
+    return -1;
+
+  lock->tqueue = lock->tdequeue = 0;
+  
 }
 
 int my_queuelock_destroy(my_queuelock_t *lock)
 {
+  return 0;
 }
 
 int my_queuelock_unlock(my_queuelock_t *lock)
@@ -213,6 +219,7 @@ int my_queuelock_unlock(my_queuelock_t *lock)
 
 int my_queuelock_lock(my_queuelock_t *lock)
 {
+  
 }
 
 int my_queuelock_trylock(my_queuelock_t *lock)
