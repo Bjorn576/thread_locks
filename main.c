@@ -19,7 +19,7 @@ int numThreads, numItterations, OperationsOutsideCS, OperationsInsideCS, testID;
 void *pthreadMutexTest()
 {
 	
-    int i;
+  int i;
 	int j;
 	int k;
 	
@@ -48,35 +48,24 @@ void *pthreadMutexTest()
 my_spinlock_t spinlock;
 my_mutex_t mlock;
 
-void *mlocktest()
-{
-  int j;
-  int i;
-  for(i=0;i<numItterations;i++)
-  {
-    
-    my_mutex_lock(&mlock);    
-    
-    
-    for(j=0;j<OperationsInsideCS;j++)
-    {
-      c++;
-      printf("THIS RAN\n");
-    }
-    my_mutex_unlock(&mlock);
-  }
-}
+
 void *spinlocktest()
 {
   
   int j;
   int i;
+  int localc = 0;
   for(i=0;i<numItterations;i++)
   {
+    //Operations without lock
+    for (j=0;j<OperationsOutsideCS;j++)
+    {
+      localc++;
+    }
     
     my_spinlock_lockTAS(&spinlock);    
     //Test for two locks called by the same thread
-    my_spinlock_lockTAS(&spinlock); 
+    //my_spinlock_lockTAS(&spinlock); 
     
     for(j=0;j<OperationsInsideCS;j++)
     {
@@ -85,6 +74,29 @@ void *spinlocktest()
     my_spinlock_unlock(&spinlock);
   }
   
+}
+
+void *mlocktest()
+{
+  int j;
+  int i;
+  int localc = 0;
+  
+  for(i=0;i<numItterations;i++)
+  {
+    for(j=0;j<OperationsOutsideCS;j++)
+    {
+      localc++;
+    }
+    
+    my_mutex_lock(&mylock);
+    
+    for(j=0;j<OperationsInsideCS;j++)
+    {
+      c++;
+    }
+    my_mutex_unlock(&mlock);
+  }
 }
 
 int runTest(int testID)

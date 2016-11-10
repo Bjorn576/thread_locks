@@ -99,12 +99,19 @@ int my_spinlock_lockTTAS(my_spinlock_t *lock)
   return 1;
 }
 
+//Does not spin but returns non-zero if it acquires spin-lock on first try and zero otherwise
 int my_spinlock_trylock(my_spinlock_t *lock)
 {
-  if(lock->val == 1)
-    return 0;
+  if(lock != NULL)
+  {
+    if(!tas(&(lock->val)))
+      return 1;
+    else
+      return 0;
+  }
   else
-    my_spinlock_lockTTAS(lock);
+    return -1;
+  
 }
 
 
@@ -123,6 +130,8 @@ int my_mutex_init(my_mutex_t *lock)
 
 int my_mutex_destroy(my_mutex_t *lock)
 {
+  //Nothing needs to be cleaned up
+  return 0;
 }
 
 int my_mutex_unlock(my_mutex_t *lock)
@@ -141,6 +150,9 @@ int my_mutex_unlock(my_mutex_t *lock)
 
 int my_mutex_lock(my_mutex_t *lock)
 {
+  if(lock == NULL)
+    return -1;
+    
   srand(time(NULL));
   struct timespec delay;
   struct timespec test;
@@ -164,16 +176,28 @@ int my_mutex_lock(my_mutex_t *lock)
       nanosleep(&delay, &test);
       if(currdelay < MAX_DELAY)
         currdelay *= 2;
+      else
+        printf("currdelay > MAX_DELAY\n");
     }
 }
 
 int my_mutex_trylock(my_mutex_t *lock)
 {
+  if(lock != NULL)
+  {
+    if(!tas(&(lock->val)))
+      return 1;
+    else
+      return 0;
+  }
+  else
+    return -1;
 }
 
 /*
  * Queue Lock
  */
+
 
 int my_queuelock_init(my_queuelock_t *lock)
 {
