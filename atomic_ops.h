@@ -14,5 +14,9 @@ static inline unsigned long cas(volatile unsigned long* ptr, unsigned long old, 
 
 }
 
+static inline unsigned int fna(volatile unsigned int* ptr, volatile unsigned int val)
+{
+	return __sync_fetch_and_add(ptr, val);
+}
 
 #endif // __ATOMIC_OPS_H__

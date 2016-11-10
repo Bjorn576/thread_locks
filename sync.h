@@ -51,8 +51,8 @@ int my_spinlock_trylock(my_spinlock_t *lock);
 
 //2 integers defined for the queue and deqeue values
 struct my_queuelock_struct {
-  volatile unsigned long tqueue;
-  volatile unsigned long tdequeue;
+  volatile unsigned int tqueue;
+  volatile unsigned int tdequeue;
 };
 
 typedef struct my_queuelock_struct my_queuelock_t;

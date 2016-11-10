@@ -204,7 +204,8 @@ int my_queuelock_init(my_queuelock_t *lock)
   if(lock == NULL)
     return -1;
 
-  lock->tqueue = lock->tdequeue = 0;
+  lock->tqueue = 0;
+  lock->tdequeue = 0;
   
 }
 
@@ -219,7 +220,17 @@ int my_queuelock_unlock(my_queuelock_t *lock)
 
 int my_queuelock_lock(my_queuelock_t *lock)
 {
+  if(lock == NULL)
+    return -1;
+
+  unsigned int my_ticket = 0;
   
+  printf("my_ticket before assignment: %d\n", my_ticket);
+  
+  my_ticket = fna(&(lock->tqueue), 1);
+
+  printf("my_ticket before assignment: %d\n", my_ticket);
+
 }
 
 int my_queuelock_trylock(my_queuelock_t *lock)
