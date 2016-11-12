@@ -170,12 +170,16 @@ if(testID == 0 || testID == 2) /*Pthread Spinlock*/
 
 if(testID == 0 || testID == 3) /*MySpinlockTAS*/
 {
-  c=0;
+  struct timespec start;
+  struct timespec stop;
+  
+  c = 0;
   my_spinlock_init(&spinlock);
   pthread_t *threads = (pthread_t* )malloc(sizeof(pthread_t)*numThreads);
   int rt;
   int i;
-
+  
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
   for(i=0;i<numThreads;i++)
   {
     printf("Create thread\n");
@@ -191,13 +195,15 @@ if(testID == 0 || testID == 3) /*MySpinlockTAS*/
     pthread_join(threads[i], NULL);
     printf("Thread joined\n");
   }
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
   printf("DONE TEST ON MY_SPINLOCK\n");
+  printf("Total time was: %lluns\n", timespecDiff(&stop, &start)/numItterations);
 }
 
 if(testID == 0 || testID == 4)
 {
   //my_mutex_lock testing
-  c=0;
+  c = 0;
   my_mutex_init(&mlock);
   pthread_t *threads = (pthread_t* )malloc(sizeof(pthread_t)*numThreads);
   int rt;
@@ -222,7 +228,7 @@ if(testID == 0 || testID == 4)
   
 }
 
-if(testID == 0 || testID == 5)
+if(testID == 5)
 {
   //my_mutex_lock testing
   c=0;

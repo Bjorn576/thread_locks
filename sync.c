@@ -10,7 +10,6 @@
 #include "sync.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include <pthread.h>
 #include <time.h>
 #include <unistd.h>
 #define MIN_DELAY 10000
@@ -40,56 +39,52 @@ int my_spinlock_unlock(my_spinlock_t *lock)
 {
   if(lock != NULL)
   {
-    if(pthread_self() == lock->owner)
+    if(pthread_equal(pthread_self(), lock->owner))
     {
-      lock->val = 0;
       printf("UNLOCKED\n");
       lock->owner = 0;
+      lock->val = 0;
       return 0;
     }
+    printf("Not the owner\n");
+    return 1;
   }
-  return -1;
+  else
+    return -1;
   
 }
 
 int my_spinlock_lockTAS(my_spinlock_t *lock)
 {
-  int tid = pthread_self();
-  if(lock->owner == tid)
-  {
+  pthread_t tid = pthread_self();
+  if(pthread_equal(tid, lock->owner))
     return 1;
-  }
   
   while(tas(&(lock->val)));
   printf("Locked!\n");
-
+  
   lock->owner = tid;
   //Should ^ be implemented like below?
   //cas(&(lock->owner), 0, tid);
-
-  
   return 0;
 }
 
 
 int my_spinlock_lockTTAS(my_spinlock_t *lock)
 {
-  int tid = pthread_self();
+  pthread_t tid = pthread_self();
   //If thread is trying to get a lock it already has
-  if(lock->owner == tid)
-  {
+  if(pthread_equal(tid, lock->owner))
     return 1;
-  }
   
   while(1)
   {
+      
     while(lock->val);
     if(!tas(&(lock->val)))
     {
       printf("LOCKED\n");
-      //If a thread is trying to reacquire a lock it already has
-      if(lock->owner == tid)
-        return 1;
+      
       lock->owner = tid;
       //cas(&(lock->owner), 0, tid);
       return 0;  
@@ -216,6 +211,10 @@ int my_queuelock_destroy(my_queuelock_t *lock)
 
 int my_queuelock_unlock(my_queuelock_t *lock)
 {
+  if(lock==NULL)
+    return -1;
+  
+  fna(&(lock->tqueue), 1);
 }
 
 int my_queuelock_lock(my_queuelock_t *lock)
@@ -223,13 +222,10 @@ int my_queuelock_lock(my_queuelock_t *lock)
   if(lock == NULL)
     return -1;
 
-  unsigned int my_ticket = 0;
+  //fna is an atomic operation (fetch and add)
+  unsigned long my_ticket = fna(&(lock->tqueue), 1);
+  printf("my_ticket after assignment: %d\n", my_ticket);
   
-  printf("my_ticket before assignment: %d\n", my_ticket);
-  
-  my_ticket = fna(&(lock->tqueue), 1);
-
-  printf("my_ticket before assignment: %d\n", my_ticket);
 
 }
 
