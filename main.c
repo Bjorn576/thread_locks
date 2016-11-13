@@ -179,7 +179,7 @@ if(testID == 0 || testID == 3) /*MySpinlockTAS*/
   int rt;
   int i;
   
-  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
+  clock_gettime(CLOCK_MONOTONIC, &start);
   for(i=0;i<numThreads;i++)
   {
     printf("Create thread\n");
@@ -195,7 +195,7 @@ if(testID == 0 || testID == 3) /*MySpinlockTAS*/
     pthread_join(threads[i], NULL);
     printf("Thread joined\n");
   }
-  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
+  clock_gettime(CLOCK_MONOTONIC, &stop);
   printf("DONE TEST ON MY_SPINLOCK\n");
   printf("Total time was: %lluns\n", timespecDiff(&stop, &start)/numItterations);
 }
