@@ -160,6 +160,7 @@ void *tlocktest()
 
 void *mlocktest()
 {
+ 
   int j;
   int i;
   int localc = 0;
@@ -219,6 +220,7 @@ if (testID == 0 || testID == 1 ) /*Pthread Mutex*/
 	printf("Threaded Run Pthread (Mutex) Total Count: %d\n", c);
 	result=timespecDiff(&stop,&start);
 	printf("Pthread Mutex time(ns): %llu\n",result/numItterations);
+  free(threads);
 
 }
 
@@ -250,6 +252,7 @@ if(testID == 0 || testID == 2) /*Pthread Spinlock*/
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
   printf("DONE TEST ON PTHREAD_SPINLOCK\n");
   printf("Total time was: %lluns\n", timespecDiff(&stop, &start)/numItterations);
+  free(threads);
 }
 
 if(testID == 0 || testID == 3) /*MySpinlockTAS*/
@@ -280,6 +283,7 @@ if(testID == 0 || testID == 3) /*MySpinlockTAS*/
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
   printf("DONE TEST ON MY_SPINLOCK\n");
   printf("Total time was: %lluns\n", timespecDiff(&stop, &start)/numItterations);
+  free(threads);
 }
 
 if(testID == 0 || testID == 4)
@@ -310,10 +314,12 @@ if(testID == 0 || testID == 4)
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
   printf("DONE TEST ON TTAS_SPINLOCK\n");
   printf("Time to run: %lluns\n", timespecDiff(&stop, &start)/numItterations);
+  free(threads);
 }
 
 if(testID == 0 || testID == 5)
 {
+  
   struct timespec start;
   struct timespec stop;
   //my_mutex_lock testing
@@ -322,7 +328,7 @@ if(testID == 0 || testID == 5)
   pthread_t *threads = (pthread_t* )malloc(sizeof(pthread_t)*numThreads);
   int rt;
   int i;
-  
+  //printf("OKAY2\n");
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
   for(i=0;i<numThreads;i++)
   {
@@ -333,14 +339,19 @@ if(testID == 0 || testID == 5)
     }
   }
   
+  //printf("OKAY3\n");
+
   for(i=0;i<numThreads;i++)
   {
+    //printf("Thread joined\n");
     pthread_join(threads[i], NULL);
   }
+  //printf("OKAY4\n");
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
   printf("DONE TEST ON MY_MUTEX\n");
   printf("Time to run: %lluns\n", timespecDiff(&stop, &start)/numItterations);
-  
+  free(threads);
+    
 }
 
 if(testID == 6)
@@ -367,6 +378,7 @@ if(testID == 6)
     pthread_join(threads[i], NULL);
   }
   printf("DONE TEST ON ticketlock\n");
+  free(threads);
 }
 
 

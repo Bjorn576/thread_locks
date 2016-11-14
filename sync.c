@@ -13,7 +13,7 @@
 #include <time.h>
 #include <unistd.h>
 #define MIN_DELAY 10ULL
-#define MAX_DELAY 10000ULL
+#define MAX_DELAY 1000ULL
 
 /*
  * Spinlock routines
@@ -167,11 +167,9 @@ int my_mutex_lock(my_mutex_t *lock)
     delay.tv_nsec = currdelay * rand() / RAND_MAX;
     
     //Sleep for that time
-    printf("Nanosleep returns: %d\n", nanosleep(&delay, &test));
+    printf("Sleep returned : %llu\n", nanosleep(&delay, &test));
     if(currdelay < MAX_DELAY)
       currdelay *= 2;
-    else
-      printf("currdelay >= MAX_DELAY\n");
   }
 }
 
