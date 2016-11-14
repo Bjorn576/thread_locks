@@ -1,9 +1,8 @@
 #include <stdlib.h>
 #include <time.h>
 #include <stdio.h>
-#include "sync.h"
-#define MIN_DELAY 1000000000ULL
-#define MAX_DELAY 1000000000ULL
+#define MIN_DELAY 10000ULL
+#define MAX_DELAY 10000000LL
 
 
 
@@ -21,7 +20,7 @@ int main()
     test1.tv_nsec = currdelay * rand() / RAND_MAX;
     printf("%llu\n", test1.tv_nsec);
     
-    nanosleep(&test1, &test2);
+    printf("Nanosleep returns: %d\n", nanosleep(&test1, &test2));
   }
   
 }

@@ -12,8 +12,8 @@
 #include <stdio.h>
 #include <time.h>
 #include <unistd.h>
-#define MIN_DELAY 10000ULL
-#define MAX_DELAY 1000000000ULL
+#define MIN_DELAY 10ULL
+#define MAX_DELAY 10000ULL
 
 /*
  * Spinlock routines
@@ -91,7 +91,7 @@ int my_spinlock_lockTTAS(my_spinlock_t *lock)
   return 1;
 }
 
-//Does not spin but returns non-zero if it acquires spin-lock on first try and zero otherwise
+//Does not spin but returns 1 if it acquires spin-lock on first try, 0 if it doesn't, and -1 if the lock was NULL
 int my_spinlock_trylock(my_spinlock_t *lock)
 {
   if(lock != NULL)
@@ -130,7 +130,7 @@ int my_mutex_unlock(my_mutex_t *lock)
 {
   if(lock != NULL)
   {
-    if(pthread_self() == lock->owner)
+    if(pthread_equal(lock->owner, pthread_self()))
     {
       
       lock->owner = 0;
@@ -138,6 +138,7 @@ int my_mutex_unlock(my_mutex_t *lock)
       //printf("Unlocked!\n");
       return 0;
     }
+    printf("Not equal to owner\n");
   }
 }
 
@@ -146,7 +147,7 @@ int my_mutex_lock(my_mutex_t *lock)
   if(lock == NULL)
     return -1;
     
-  srand(time(NULL));
+  
   struct timespec delay;
   struct timespec test;
   unsigned long long currdelay = MIN_DELAY;
@@ -162,16 +163,16 @@ int my_mutex_lock(my_mutex_t *lock)
       return 0;  
     }
         
-      //Random time between 0 and currdelay nanoseconds
-      delay.tv_nsec = currdelay * rand() / RAND_MAX;
-      
-      //Sleep for that time
-      nanosleep(&delay, &test);
-      if(currdelay < MAX_DELAY)
-        currdelay *= 2;
-      else
-        printf("currdelay >= MAX_DELAY\n");
-    }
+    //Random time between 0 and currdelay nanoseconds
+    delay.tv_nsec = currdelay * rand() / RAND_MAX;
+    
+    //Sleep for that time
+    printf("Nanosleep returns: %d\n", nanosleep(&delay, &test));
+    if(currdelay < MAX_DELAY)
+      currdelay *= 2;
+    else
+      printf("currdelay >= MAX_DELAY\n");
+  }
 }
 
 int my_mutex_trylock(my_mutex_t *lock)

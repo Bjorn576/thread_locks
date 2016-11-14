@@ -2,6 +2,7 @@
 #include "sync.h"
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 
 void *fnC()
 {
@@ -162,6 +163,7 @@ void *mlocktest()
   int j;
   int i;
   int localc = 0;
+  srand(time(NULL));
   
   for(i=0;i<numItterations;i++)
   {
@@ -196,7 +198,7 @@ if (testID == 0 || testID == 1 ) /*Pthread Mutex*/
 	int i;
 	int rt;
 
-	clock_gettime(CLOCK_MONOTONIC, &start);
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
 	for(i=0;i<numThreads;i++)
 	{
 	
@@ -212,7 +214,7 @@ if (testID == 0 || testID == 1 ) /*Pthread Mutex*/
 	{
 		 pthread_join(threads[i], NULL);
 	}
-	clock_gettime(CLOCK_MONOTONIC, &stop);
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
 
 	printf("Threaded Run Pthread (Mutex) Total Count: %d\n", c);
 	result=timespecDiff(&stop,&start);
@@ -231,7 +233,7 @@ if(testID == 0 || testID == 2) /*Pthread Spinlock*/
   int rt;
   int i;
   
-  clock_gettime(CLOCK_MONOTONIC, &start);
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
   for(i=0;i<numThreads;i++)
   {
     if( rt=(pthread_create( threads+i, NULL, &pthreadSpinTest, NULL)) )
@@ -245,7 +247,7 @@ if(testID == 0 || testID == 2) /*Pthread Spinlock*/
   {
     pthread_join(threads[i], NULL);
   }
-  clock_gettime(CLOCK_MONOTONIC, &stop);
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
   printf("DONE TEST ON PTHREAD_SPINLOCK\n");
   printf("Total time was: %lluns\n", timespecDiff(&stop, &start)/numItterations);
 }
@@ -261,7 +263,7 @@ if(testID == 0 || testID == 3) /*MySpinlockTAS*/
   int rt;
   int i;
   
-  clock_gettime(CLOCK_MONOTONIC, &start);
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
   for(i=0;i<numThreads;i++)
   {
     if( rt=(pthread_create( threads+i, NULL, &spinlocktest, NULL)) )
@@ -275,7 +277,7 @@ if(testID == 0 || testID == 3) /*MySpinlockTAS*/
   {
     pthread_join(threads[i], NULL);
   }
-  clock_gettime(CLOCK_MONOTONIC, &stop);
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
   printf("DONE TEST ON MY_SPINLOCK\n");
   printf("Total time was: %lluns\n", timespecDiff(&stop, &start)/numItterations);
 }
@@ -291,7 +293,7 @@ if(testID == 0 || testID == 4)
   int rt;
   int i;
 
-  clock_gettime(CLOCK_MONOTONIC, &start);
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
   for(i=0;i<numThreads;i++)
   {
     if( rt=(pthread_create( threads+i, NULL, &ttastest, NULL)) )
@@ -305,7 +307,7 @@ if(testID == 0 || testID == 4)
   {
     pthread_join(threads[i], NULL);
   }
-  clock_gettime(CLOCK_MONOTONIC, &stop);
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
   printf("DONE TEST ON TTAS_SPINLOCK\n");
   printf("Time to run: %lluns\n", timespecDiff(&stop, &start)/numItterations);
 }
@@ -321,7 +323,7 @@ if(testID == 0 || testID == 5)
   int rt;
   int i;
   
-  clock_gettime(CLOCK_MONOTONIC, &start);
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
   for(i=0;i<numThreads;i++)
   {
     if( rt=(pthread_create( threads+i, NULL, &mlocktest, NULL)) )
@@ -335,7 +337,7 @@ if(testID == 0 || testID == 5)
   {
     pthread_join(threads[i], NULL);
   }
-  clock_gettime(CLOCK_MONOTONIC, &stop);
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
   printf("DONE TEST ON MY_MUTEX\n");
   printf("Time to run: %lluns\n", timespecDiff(&stop, &start)/numItterations);
   
@@ -343,7 +345,7 @@ if(testID == 0 || testID == 5)
 
 if(testID == 6)
 {
-  //my_mutex_lock testing
+  //ticket_lock
   c=0;
   my_queuelock_init(&tlock);
 
@@ -367,7 +369,7 @@ if(testID == 6)
   printf("DONE TEST ON ticketlock\n");
 }
 
-/*....you must implement the other tests....*/
+
 
 	return 0;
 }
@@ -389,7 +391,7 @@ int processInput(int argc, char *argv[])
   int tflag, iflag, oflag, cflag, dflag;
   
   tflag = iflag = oflag = cflag = dflag = 0;
-  printf("All these should be 0 %d %d %d %d %d\n", tflag, iflag, oflag, cflag, dflag);
+  printf("%d %d %d %d %d\n", tflag, iflag, oflag, cflag, dflag);
   
   //Custom input values
   for (i=1;i<argc;i++)
@@ -420,7 +422,7 @@ int processInput(int argc, char *argv[])
       dflag = 1;
     }
   }
-  printf("All these should be 0 %d %d %d %d %d\n", tflag, iflag, oflag, cflag, dflag);
+  printf("\n%d %d %d %d %d\n", tflag, iflag, oflag, cflag, dflag);
   
   //Set default values if necessary
   if(!tflag)
