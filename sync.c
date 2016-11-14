@@ -12,8 +12,8 @@
 #include <stdio.h>
 #include <time.h>
 #include <unistd.h>
-#define MIN_DELAY 10000
-#define MAX_DELAY 1000000000
+#define MIN_DELAY 10000ULL
+#define MAX_DELAY 1000000000ULL
 
 /*
  * Spinlock routines
@@ -40,8 +40,7 @@ int my_spinlock_unlock(my_spinlock_t *lock)
   if(lock != NULL)
   {
     if(pthread_equal(pthread_self(), lock->owner))
-    {
-      printf("UNLOCKED\n");
+    {      
       lock->owner = 0;
       lock->val = 0;
       return 0;
@@ -61,7 +60,7 @@ int my_spinlock_lockTAS(my_spinlock_t *lock)
     return 1;
   
   while(tas(&(lock->val)));
-  printf("Locked!\n");
+  
   
   lock->owner = tid;
   //Should ^ be implemented like below?
@@ -83,8 +82,6 @@ int my_spinlock_lockTTAS(my_spinlock_t *lock)
     while(lock->val);
     if(!tas(&(lock->val)))
     {
-      printf("LOCKED\n");
-      
       lock->owner = tid;
       //cas(&(lock->owner), 0, tid);
       return 0;  
@@ -135,9 +132,10 @@ int my_mutex_unlock(my_mutex_t *lock)
   {
     if(pthread_self() == lock->owner)
     {
-      lock->val = 0;
+      
       lock->owner = 0;
-      printf("MUTEX UNLOCKED\n");
+      lock->val = 0;
+      //printf("Unlocked!\n");
       return 0;
     }
   }
@@ -160,7 +158,7 @@ int my_mutex_lock(my_mutex_t *lock)
     if(!tas(&(lock->val)))
     {
       lock->owner = pthread_self();
-      printf("LOCKED\n");
+      //printf("LOCKED\n");
       return 0;  
     }
         
@@ -172,7 +170,7 @@ int my_mutex_lock(my_mutex_t *lock)
       if(currdelay < MAX_DELAY)
         currdelay *= 2;
       else
-        printf("currdelay > MAX_DELAY\n");
+        printf("currdelay >= MAX_DELAY\n");
     }
 }
 

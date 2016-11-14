@@ -12,10 +12,70 @@ void *fnC()
     }   
 }
 
-
+//Initialize lock variables
+my_spinlock_t spinlock;
+my_mutex_t mlock;
+my_queuelock_t tlock;
+pthread_spinlock_t pspin;
 pthread_mutex_t count_mutex;
+
 int numThreads, numItterations, OperationsOutsideCS, OperationsInsideCS, testID;
 
+void *pthreadSpinTest()
+{
+	
+  int i;
+	int j;
+	int k;
+	
+	int localCount = 0;
+	
+    for(i=0;i<numItterations;i++)
+    {
+		
+		  for(j=0;j<workOutsideCS;j++)/*How much work is done outside the CS*/
+		  {
+		  	localCount++;
+		  }
+		
+		  pthread_spin_lock(&pspin);
+  		for(k=0;k<workInsideCS;k++)/*How much work is done inside the CS*/
+		  {
+  			c++;
+		  }
+  		pthread_spin_unlock(&pspin);   
+	
+    }   
+
+
+}
+
+
+void *ttastest()
+{
+  int i;
+	int j;
+	int k;
+	
+	int localCount = 0;
+	
+    for(i=0;i<numItterations;i++)
+    {
+		
+		  for(j=0;j<workOutsideCS;j++)/*How much work is done outside the CS*/
+		  {
+		  	localCount++;
+		  }
+		
+		  my_spinlock_lockTTAS(&spinlock);
+  		for(k=0;k<workInsideCS;k++)/*How much work is done inside the CS*/
+		  {
+  			c++;
+		  }
+  		my_spinlock_unlock(&spinlock);
+	
+    }   
+}
 void *pthreadMutexTest()
 {
 	
@@ -45,10 +105,7 @@ void *pthreadMutexTest()
 
 }
 
-//Initialize lock variables
-my_spinlock_t spinlock;
-my_mutex_t mlock;
-my_queuelock_t tlock;
+
 
 
 void *spinlocktest()
@@ -159,13 +216,38 @@ if (testID == 0 || testID == 1 ) /*Pthread Mutex*/
 
 	printf("Threaded Run Pthread (Mutex) Total Count: %d\n", c);
 	result=timespecDiff(&stop,&start);
-	printf("Pthread Mutex time(ms): %llu\n",result/1000000);
+	printf("Pthread Mutex time(ns): %llu\n",result/numItterations);
 
 }
 
 if(testID == 0 || testID == 2) /*Pthread Spinlock*/
 {
+  struct timespec start;
+  struct timespec stop;
   
+  c=0;
+  pthread_spin_init(&pspin, 0);
+  pthread_t *threads = (pthread_t* )malloc(sizeof(pthread_t)*numThreads);
+  int rt;
+  int i;
+  
+  clock_gettime(CLOCK_MONOTONIC, &start);
+  for(i=0;i<numThreads;i++)
+  {
+    if( rt=(pthread_create( threads+i, NULL, &pthreadSpinTest, NULL)) )
+    {
+       printf("Thread creation failed: %d\n", rt);
+       return -1;	
+    }
+  }
+  
+  for(i=0;i<numThreads;i++)
+  {
+    pthread_join(threads[i], NULL);
+  }
+  clock_gettime(CLOCK_MONOTONIC, &stop);
+  printf("DONE TEST ON PTHREAD_SPINLOCK\n");
+  printf("Total time was: %lluns\n", timespecDiff(&stop, &start)/numItterations);
 }
 
 if(testID == 0 || testID == 3) /*MySpinlockTAS*/
@@ -182,7 +264,6 @@ if(testID == 0 || testID == 3) /*MySpinlockTAS*/
   clock_gettime(CLOCK_MONOTONIC, &start);
   for(i=0;i<numThreads;i++)
   {
-    printf("Create thread\n");
     if( rt=(pthread_create( threads+i, NULL, &spinlocktest, NULL)) )
     {
        printf("Thread creation failed: %d\n", rt);
@@ -193,7 +274,6 @@ if(testID == 0 || testID == 3) /*MySpinlockTAS*/
   for(i=0;i<numThreads;i++)
   {
     pthread_join(threads[i], NULL);
-    printf("Thread joined\n");
   }
   clock_gettime(CLOCK_MONOTONIC, &stop);
   printf("DONE TEST ON MY_SPINLOCK\n");
@@ -202,16 +282,48 @@ if(testID == 0 || testID == 3) /*MySpinlockTAS*/
 
 if(testID == 0 || testID == 4)
 {
+  struct timespec start;
+  struct timespec stop;
+  c = 0;
+  my_spinlock_init(&spinlock);
+  
+  pthread_t *threads = (pthread_t* )malloc(sizeof(pthread_t)*numThreads);
+  int rt;
+  int i;
+
+  clock_gettime(CLOCK_MONOTONIC, &start);
+  for(i=0;i<numThreads;i++)
+  {
+    if( rt=(pthread_create( threads+i, NULL, &ttastest, NULL)) )
+    {
+       printf("Thread creation failed: %d\n", rt);
+       return -1;	
+    }
+  }
+  
+  for(i=0;i<numThreads;i++)
+  {
+    pthread_join(threads[i], NULL);
+  }
+  clock_gettime(CLOCK_MONOTONIC, &stop);
+  printf("DONE TEST ON TTAS_SPINLOCK\n");
+  printf("Time to run: %lluns\n", timespecDiff(&stop, &start)/numItterations);
+}
+
+if(testID == 0 || testID == 5)
+{
+  struct timespec start;
+  struct timespec stop;
   //my_mutex_lock testing
   c = 0;
   my_mutex_init(&mlock);
   pthread_t *threads = (pthread_t* )malloc(sizeof(pthread_t)*numThreads);
   int rt;
   int i;
-
+  
+  clock_gettime(CLOCK_MONOTONIC, &start);
   for(i=0;i<numThreads;i++)
   {
-    printf("Create thread\n");
     if( rt=(pthread_create( threads+i, NULL, &mlocktest, NULL)) )
     {
        printf("Thread creation failed: %d\n", rt);
@@ -222,13 +334,14 @@ if(testID == 0 || testID == 4)
   for(i=0;i<numThreads;i++)
   {
     pthread_join(threads[i], NULL);
-    printf("Thread joined\n");
   }
+  clock_gettime(CLOCK_MONOTONIC, &stop);
   printf("DONE TEST ON MY_MUTEX\n");
+  printf("Time to run: %lluns\n", timespecDiff(&stop, &start)/numItterations);
   
 }
 
-if(testID == 5)
+if(testID == 6)
 {
   //my_mutex_lock testing
   c=0;
@@ -240,7 +353,6 @@ if(testID == 5)
 
   for(i=0;i<numThreads;i++)
   {
-    printf("Create thread\n");
     if( rt=(pthread_create( threads+i, NULL, &tlocktest, NULL)) )
     {
        printf("Thread creation failed: %d\n", rt);
@@ -251,7 +363,6 @@ if(testID == 5)
   for(i=0;i<numThreads;i++)
   {
     pthread_join(threads[i], NULL);
-    printf("Thread joined\n");
   }
   printf("DONE TEST ON ticketlock\n");
 }
@@ -342,7 +453,7 @@ int main(int argc, char *argv[])
   printf("NUMBER OF THREADS: %d\n", numThreads);
   printf("NUMBER OF ITERATIONS: %d\n", numItterations);
   printf("NUMBER OF OperationsOutsideCS: %d\n", OperationsOutsideCS);
-  printf("NUMBER OF OperationsInsideCS: %d\n", OperationsInsideCS);
+  printf("NUMBER OF OperationsInsideCS: %d\n\n", OperationsInsideCS);
   printf("TESTID: %d\n", testID);
 	runTest(testID);
 	return 0;
