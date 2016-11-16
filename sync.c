@@ -12,8 +12,8 @@
 #include <stdio.h>
 #include <time.h>
 #include <unistd.h>
-#define MIN_DELAY 10ULL
-#define MAX_DELAY 1000ULL
+#define MIN_DELAY 1
+#define MAX_DELAY 10
 
 /*
  * Spinlock routines
@@ -149,7 +149,8 @@ int my_mutex_lock(my_mutex_t *lock)
     
   
   struct timespec delay;
-  struct timespec test;
+  //struct timespec test;
+  long sleep;
   unsigned long long currdelay = MIN_DELAY;
   
   while(1)
@@ -163,11 +164,14 @@ int my_mutex_lock(my_mutex_t *lock)
       return 0;  
     }
         
-    //Random time between 0 and currdelay nanoseconds
-    delay.tv_nsec = currdelay * rand() / RAND_MAX;
+    //Random time between 0 and currdelay microseconds
+    sleep = currdelay * rand() / RAND_MAX;
     
     //Sleep for that time
-    printf("Sleep returned : %llu\n", nanosleep(&delay, &test));
+    //printf("Sleep returned : %llu\n", nanosleep(&delay, &test));
+    //printf("Return value of usleep is: %d\n", usleep(sleep));
+    usleep(sleep);
+
     if(currdelay < MAX_DELAY)
       currdelay *= 2;
   }
@@ -198,7 +202,7 @@ int my_queuelock_init(my_queuelock_t *lock)
 
   lock->tqueue = 0;
   lock->tdequeue = 0;
-  
+  lock->owner = 0;
 }
 
 int my_queuelock_destroy(my_queuelock_t *lock)
@@ -211,7 +215,11 @@ int my_queuelock_unlock(my_queuelock_t *lock)
   if(lock==NULL)
     return -1;
   
-  fna(&(lock->tqueue), 1);
+  //increment the 'nowserving' ticket
+  //printf("tdequeue before fna: %d\n", lock->tdequeue);
+  fna(&(lock->tdequeue), 1);
+  //printf("tdequeue after fna: %d\n", lock->tdequeue);
+  lock->owner = 0;
 }
 
 int my_queuelock_lock(my_queuelock_t *lock)
@@ -219,10 +227,19 @@ int my_queuelock_lock(my_queuelock_t *lock)
   if(lock == NULL)
     return -1;
 
+  pthread_t tid = pthread_self();
+  if(pthread_equal(tid, lock->owner))
+    return 1;
+
   //fna is an atomic operation (fetch and add)
+  //printf("my_ticket before fna: %d\n", my_ticket);
   unsigned long my_ticket = fna(&(lock->tqueue), 1);
-  printf("my_ticket after assignment: %d\n", my_ticket);
-  
+//  printf("my_ticket after fna: %d\n", my_ticket);
+
+  //busy wait if my_ticket is not 'being served'
+  while(my_ticket != lock->tdequeue);
+  //Only one thread can leave this loop at a given moment because of the queue so don't need condition and, to be extra careful, use atomic tas. 
+  lock->owner = tid;
 
 }
 

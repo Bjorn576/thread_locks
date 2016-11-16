@@ -54,6 +54,8 @@ int my_spinlock_trylock(my_spinlock_t *lock);
 struct my_queuelock_struct {
   volatile unsigned int tqueue;
   volatile unsigned int tdequeue;
+  //volatile unsigned long val;
+  volatile pthread_t owner;
 };
 
 typedef struct my_queuelock_struct my_queuelock_t;

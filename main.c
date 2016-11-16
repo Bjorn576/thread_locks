@@ -89,13 +89,13 @@ void *pthreadMutexTest()
     for(i=0;i<numItterations;i++)
     {
 		
-		  for(j=0;j<workOutsideCS;j++)/*How much work is done outside the CS*/
+		  for(j=0;j<OperationsOutsideCS;j++)/*How much work is done outside the CS*/
 		  {
 		  	localCount++;
 		  }
 		
 		  pthread_mutex_lock(&count_mutex);
-  		for(k=0;k<workInsideCS;k++)/*How much work is done inside the CS*/
+  		for(k=0;k<OperationsInsideCS;k++)/*How much work is done inside the CS*/
 		  {
   			c++;
 		  }
@@ -199,7 +199,7 @@ if (testID == 0 || testID == 1 ) /*Pthread Mutex*/
 	int i;
 	int rt;
 
-	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
+	clock_gettime(CLOCK_MONOTONIC, &start);
 	for(i=0;i<numThreads;i++)
 	{
 	
@@ -215,7 +215,7 @@ if (testID == 0 || testID == 1 ) /*Pthread Mutex*/
 	{
 		 pthread_join(threads[i], NULL);
 	}
-	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
+	clock_gettime(CLOCK_MONOTONIC, &stop);
 
 	printf("Threaded Run Pthread (Mutex) Total Count: %d\n", c);
 	result=timespecDiff(&stop,&start);
@@ -235,7 +235,7 @@ if(testID == 0 || testID == 2) /*Pthread Spinlock*/
   int rt;
   int i;
   
-  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
+  clock_gettime(CLOCK_MONOTONIC, &start);
   for(i=0;i<numThreads;i++)
   {
     if( rt=(pthread_create( threads+i, NULL, &pthreadSpinTest, NULL)) )
@@ -249,7 +249,7 @@ if(testID == 0 || testID == 2) /*Pthread Spinlock*/
   {
     pthread_join(threads[i], NULL);
   }
-  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
+  clock_gettime(CLOCK_MONOTONIC, &stop);
   printf("DONE TEST ON PTHREAD_SPINLOCK\n");
   printf("Total time was: %lluns\n", timespecDiff(&stop, &start)/numItterations);
   free(threads);
@@ -266,7 +266,7 @@ if(testID == 0 || testID == 3) /*MySpinlockTAS*/
   int rt;
   int i;
   
-  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
+  clock_gettime(CLOCK_MONOTONIC, &start);
   for(i=0;i<numThreads;i++)
   {
     if( rt=(pthread_create( threads+i, NULL, &spinlocktest, NULL)) )
@@ -280,7 +280,7 @@ if(testID == 0 || testID == 3) /*MySpinlockTAS*/
   {
     pthread_join(threads[i], NULL);
   }
-  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
+  clock_gettime(CLOCK_MONOTONIC, &stop);
   printf("DONE TEST ON MY_SPINLOCK\n");
   printf("Total time was: %lluns\n", timespecDiff(&stop, &start)/numItterations);
   free(threads);
@@ -297,7 +297,7 @@ if(testID == 0 || testID == 4)
   int rt;
   int i;
 
-  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
+  clock_gettime(CLOCK_MONOTONIC, &start);
   for(i=0;i<numThreads;i++)
   {
     if( rt=(pthread_create( threads+i, NULL, &ttastest, NULL)) )
@@ -311,7 +311,7 @@ if(testID == 0 || testID == 4)
   {
     pthread_join(threads[i], NULL);
   }
-  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
+  clock_gettime(CLOCK_MONOTONIC, &stop);
   printf("DONE TEST ON TTAS_SPINLOCK\n");
   printf("Time to run: %lluns\n", timespecDiff(&stop, &start)/numItterations);
   free(threads);
@@ -329,7 +329,7 @@ if(testID == 0 || testID == 5)
   int rt;
   int i;
   //printf("OKAY2\n");
-  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
+  clock_gettime(CLOCK_MONOTONIC, &start);
   for(i=0;i<numThreads;i++)
   {
     if( rt=(pthread_create( threads+i, NULL, &mlocktest, NULL)) )
@@ -347,16 +347,20 @@ if(testID == 0 || testID == 5)
     pthread_join(threads[i], NULL);
   }
   //printf("OKAY4\n");
-  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
+  clock_gettime(CLOCK_MONOTONIC, &stop);
   printf("DONE TEST ON MY_MUTEX\n");
   printf("Time to run: %lluns\n", timespecDiff(&stop, &start)/numItterations);
   free(threads);
     
 }
 
-if(testID == 6)
+//ticket_lock testing
+if(testID == 0 || testID == 6)
 {
-  //ticket_lock
+  
+  struct timespec start;
+  struct timespec stop;
+
   c=0;
   my_queuelock_init(&tlock);
 
@@ -364,6 +368,7 @@ if(testID == 6)
   int rt;
   int i;
 
+  clock_gettime(CLOCK_MONOTONIC, &start);
   for(i=0;i<numThreads;i++)
   {
     if( rt=(pthread_create( threads+i, NULL, &tlocktest, NULL)) )
@@ -377,7 +382,10 @@ if(testID == 6)
   {
     pthread_join(threads[i], NULL);
   }
+  clock_gettime(CLOCK_MONOTONIC, &stop);
+
   printf("DONE TEST ON ticketlock\n");
+  printf("Average lock/unlock with %d iterations in the critical section is %lluns\n", OperationsInsideCS, timespecDiff(&stop, &start)/numItterations);
   free(threads);
 }
 
@@ -440,7 +448,7 @@ int processInput(int argc, char *argv[])
   if(!tflag)
     numThreads = 4;
   if(!iflag)
-    numItterations = 100000;
+    numItterations = 1000000;
   if(!dflag)
     testID = 2;
   if(!oflag)
