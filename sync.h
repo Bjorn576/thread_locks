@@ -13,6 +13,7 @@
 struct my_mutex_struct {
   volatile unsigned long val;
   volatile pthread_t owner;
+  volatile int lcount;
 };
 
 
@@ -35,6 +36,8 @@ int my_mutex_trylock(my_mutex_t *lock);
 struct my_spinlock_struct {
   volatile unsigned long val;
   volatile pthread_t owner;
+  //lcount tracks number of times locked
+  volatile unsigned int lcount;
 };
 
 typedef struct my_spinlock_struct my_spinlock_t;
@@ -54,7 +57,8 @@ int my_spinlock_trylock(my_spinlock_t *lock);
 struct my_queuelock_struct {
   volatile unsigned int tqueue;
   volatile unsigned int tdequeue;
-  //volatile unsigned long val;
+  volatile unsigned long val;
+  volatile unsigned int lcount;
   volatile pthread_t owner;
 };
 

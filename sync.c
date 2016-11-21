@@ -25,6 +25,7 @@ int my_spinlock_init(my_spinlock_t *lock)
   {
     lock->owner = 0;
     lock->val = 0;
+    lock->lcount = 0;
     return 0;
   }
   return -1;
@@ -40,9 +41,14 @@ int my_spinlock_unlock(my_spinlock_t *lock)
   if(lock != NULL)
   {
     if(pthread_equal(pthread_self(), lock->owner))
-    {      
-      lock->owner = 0;
-      lock->val = 0;
+    {
+      lock->lcount--;
+      //if lcount is 0 then we have undone all the locks called by a particular thread
+      if(lock->lcount == 0)
+      {
+	lock->owner = 0;
+	lock->val = 0;
+      }
       return 0;
     }
     printf("Not the owner\n");
@@ -50,18 +56,21 @@ int my_spinlock_unlock(my_spinlock_t *lock)
   }
   else
     return -1;
-  
+
 }
 
 int my_spinlock_lockTAS(my_spinlock_t *lock)
 {
   pthread_t tid = pthread_self();
   if(pthread_equal(tid, lock->owner))
+  {
+    lock->lcount++;
     return 1;
-  
+  }
+
   while(tas(&(lock->val)));
-  
-  
+
+  lock->lcount++;
   lock->owner = tid;
   //Should ^ be implemented like below?
   //cas(&(lock->owner), 0, tid);
@@ -74,19 +83,22 @@ int my_spinlock_lockTTAS(my_spinlock_t *lock)
   pthread_t tid = pthread_self();
   //If thread is trying to get a lock it already has
   if(pthread_equal(tid, lock->owner))
+  {
+    lock->lcount++;
     return 1;
-  
+  }
+
   while(1)
   {
-      
+
     while(lock->val);
     if(!tas(&(lock->val)))
     {
+      lock->lcount++;
       lock->owner = tid;
-      //cas(&(lock->owner), 0, tid);
-      return 0;  
+      return 0;
     }
-      
+
   }
   return 1;
 }
@@ -97,13 +109,17 @@ int my_spinlock_trylock(my_spinlock_t *lock)
   if(lock != NULL)
   {
     if(!tas(&(lock->val)))
+    {
+      lock->lcount++;
+      lock->owner = pthread_self();
       return 1;
+    }
     else
       return 0;
   }
   else
     return -1;
-  
+
 }
 
 
@@ -117,6 +133,7 @@ int my_mutex_init(my_mutex_t *lock)
   {
     lock->val = 0;
     lock->owner = 0;
+    lock->lcount = 0;
   }
 }
 
@@ -132,9 +149,12 @@ int my_mutex_unlock(my_mutex_t *lock)
   {
     if(pthread_equal(lock->owner, pthread_self()))
     {
-      
-      lock->owner = 0;
-      lock->val = 0;
+      lock->lcount--;
+      if(lock->lcount == 0)
+      {
+	lock->owner = 0;
+	lock->val = 0;
+      }
       //printf("Unlocked!\n");
       return 0;
     }
@@ -146,27 +166,33 @@ int my_mutex_lock(my_mutex_t *lock)
 {
   if(lock == NULL)
     return -1;
-    
-  
+
+  pthread_t tid = pthread_self();
+  if(pthread_equal(tid, lock->owner))
+  {
+    lock->lcount++;
+    return 0;
+  }
   struct timespec delay;
   //struct timespec test;
   long sleep;
   unsigned long long currdelay = MIN_DELAY;
-  
+
   while(1)
   {
     //Wait until lock 'looks' available
     while(lock->val);
     if(!tas(&(lock->val)))
     {
+      lock->lcount++;
       lock->owner = pthread_self();
       //printf("LOCKED\n");
-      return 0;  
+      return 0;
     }
-        
+
     //Random time between 0 and currdelay microseconds
     sleep = currdelay * rand() / RAND_MAX;
-    
+
     //Sleep for that time
     //printf("Sleep returned : %llu\n", nanosleep(&delay, &test));
     //printf("Return value of usleep is: %d\n", usleep(sleep));
@@ -182,7 +208,11 @@ int my_mutex_trylock(my_mutex_t *lock)
   if(lock != NULL)
   {
     if(!tas(&(lock->val)))
+    {
+     //Should a thread be able to trylock it's own lock?
+     // lock->lcount++;
       return 1;
+    }
     else
       return 0;
   }
@@ -214,7 +244,7 @@ int my_queuelock_unlock(my_queuelock_t *lock)
 {
   if(lock==NULL)
     return -1;
-  
+
   //increment the 'nowserving' ticket
   //printf("tdequeue before fna: %d\n", lock->tdequeue);
   fna(&(lock->tdequeue), 1);
@@ -238,7 +268,7 @@ int my_queuelock_lock(my_queuelock_t *lock)
 
   //busy wait if my_ticket is not 'being served'
   while(my_ticket != lock->tdequeue);
-  //Only one thread can leave this loop at a given moment because of the queue so don't need condition and, to be extra careful, use atomic tas. 
+  //Only one thread can leave this loop at a given moment because of the queue so don't need condition and, to be extra careful, use atomic tas.
   lock->owner = tid;
 
 }
@@ -246,4 +276,3 @@ int my_queuelock_lock(my_queuelock_t *lock)
 int my_queuelock_trylock(my_queuelock_t *lock)
 {
 }
-
