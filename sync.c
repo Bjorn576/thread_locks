@@ -250,6 +250,7 @@ int my_queuelock_unlock(my_queuelock_t *lock)
     {
       //increment the 'nowserving' ticket, set owner to nothing, and decrement number of locks acquired by particular thread.
       lock->owner = 0;
+      lock->val = 0;
       fna(&(lock->tdequeue), 1);
       return 0;
     }
@@ -275,11 +276,12 @@ int my_queuelock_lock(my_queuelock_t *lock)
 
   //busy wait if my_ticket is not 'being served'
   //if this check fails, the thread gives up the CPU to make sure all threads are able to check this condition in an acceptable amount of time
-  while(my_ticket != lock->tdequeue)
+  while(my_ticket != lock->tdequeue || lock->val == 1)
     pthread_yield();
   //Only one thread can leave this loop at a given moment because of the queue so don't need condition
   lock->owner = tid;
   lock->lcount++;
+  lock->val = 1;
 }
 
 int my_queuelock_trylock(my_queuelock_t *lock)
@@ -287,5 +289,13 @@ int my_queuelock_trylock(my_queuelock_t *lock)
   if(lock == NULL)
     return -1;
 
-  
+  if(!tas(&(lock->val)))
+  {
+    lock->lcount++;
+    return 1;
+  }
+  else
+  {
+    return 0;
+  }
 }
