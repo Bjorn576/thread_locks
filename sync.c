@@ -246,10 +246,11 @@ int my_queuelock_unlock(my_queuelock_t *lock)
     return -1;
 
   //increment the 'nowserving' ticket
-  //printf("tdequeue before fna: %d\n", lock->tdequeue);
+  //printf("Nowserving before increment: %d\n", lock->tdequeue);
   fna(&(lock->tdequeue), 1);
-  //printf("tdequeue after fna: %d\n", lock->tdequeue);
+  //printf("Nowserving after increment: %d\n", lock->tdequeue);
   lock->owner = 0;
+  usleep(1);
 }
 
 int my_queuelock_lock(my_queuelock_t *lock)
@@ -262,14 +263,14 @@ int my_queuelock_lock(my_queuelock_t *lock)
     return 1;
 
   //fna is an atomic operation (fetch and add)
-  //printf("my_ticket before fna: %d\n", my_ticket);
   unsigned long my_ticket = fna(&(lock->tqueue), 1);
-//  printf("my_ticket after fna: %d\n", my_ticket);
+  //printf("My_ticket is: %lu\n", my_ticket);
 
   //busy wait if my_ticket is not 'being served'
   while(my_ticket != lock->tdequeue);
-  //Only one thread can leave this loop at a given moment because of the queue so don't need condition and, to be extra careful, use atomic tas.
+  //Only one thread can leave this loop at a given moment because of the queue so don't need condition
   lock->owner = tid;
+  //printf("Locked\n");
 
 }
 

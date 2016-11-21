@@ -149,7 +149,9 @@ void *tlocktest()
       localc++;
     }
 
+    //printf("Locking lock\n");
     my_queuelock_lock(&tlock);
+    //printf("Locked\n");
     //my_queuelock_lock(&tlock);
     //my_queuelock_lock(&tlock);
 
@@ -157,7 +159,9 @@ void *tlocktest()
     {
       c++;
     }
+    //printf("Unlocking Lock\n");
     my_queuelock_unlock(&tlock);
+    //printf("Unlocked\n");
     //my_queuelock_unlock(&tlock);
     //my_queuelock_unlock(&tlock);
   }
@@ -434,11 +438,13 @@ if(testID == 6)
        printf("Thread creation failed: %d\n", rt);
        return -1;
     }
+    printf("Thread created\n");
   }
 
   for(i=0;i<numThreads;i++)
   {
     pthread_join(threads[i], NULL);
+    printf("Thread Joined\n");
   }
   clock_gettime(CLOCK_MONOTONIC, &stop);
 
