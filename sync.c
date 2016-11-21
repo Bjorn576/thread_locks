@@ -152,13 +152,11 @@ int my_mutex_unlock(my_mutex_t *lock)
       lock->lcount--;
       if(lock->lcount == 0)
       {
-	lock->owner = 0;
-	lock->val = 0;
+	       lock->owner = 0;
+         lock->val = 0;
       }
-      //printf("Unlocked!\n");
       return 0;
     }
-    printf("Not equal to owner\n");
   }
 }
 
@@ -210,7 +208,7 @@ int my_mutex_trylock(my_mutex_t *lock)
     if(!tas(&(lock->val)))
     {
      //Should a thread be able to trylock it's own lock?
-     // lock->lcount++;
+      lock->lcount++;
       return 1;
     }
     else
@@ -245,12 +243,18 @@ int my_queuelock_unlock(my_queuelock_t *lock)
   if(lock==NULL)
     return -1;
 
-  //increment the 'nowserving' ticket
-  //printf("Nowserving before increment: %d\n", lock->tdequeue);
-  fna(&(lock->tdequeue), 1);
-  //printf("Nowserving after increment: %d\n", lock->tdequeue);
-  lock->owner = 0;
-  usleep(1);
+  if(pthread_equal(pthread_self(), lock->owner))
+  {
+    lock->lcount--;
+    if(lock->lcount == 0)
+    {
+      //increment the 'nowserving' ticket, set owner to nothing, and decrement number of locks acquired by particular thread.
+      lock->owner = 0;
+      fna(&(lock->tdequeue), 1);
+      return 0;
+    }
+    return 1;
+  }
 }
 
 int my_queuelock_lock(my_queuelock_t *lock)
@@ -260,20 +264,28 @@ int my_queuelock_lock(my_queuelock_t *lock)
 
   pthread_t tid = pthread_self();
   if(pthread_equal(tid, lock->owner))
+  {
+    lock->lcount++;
     return 1;
+  }
+
 
   //fna is an atomic operation (fetch and add)
   unsigned long my_ticket = fna(&(lock->tqueue), 1);
-  //printf("My_ticket is: %lu\n", my_ticket);
 
   //busy wait if my_ticket is not 'being served'
-  while(my_ticket != lock->tdequeue);
+  //if this check fails, the thread gives up the CPU to make sure all threads are able to check this condition in an acceptable amount of time
+  while(my_ticket != lock->tdequeue)
+    pthread_yield();
   //Only one thread can leave this loop at a given moment because of the queue so don't need condition
   lock->owner = tid;
-  //printf("Locked\n");
-
+  lock->lcount++;
 }
 
 int my_queuelock_trylock(my_queuelock_t *lock)
 {
+  if(lock == NULL)
+    return -1;
+
+  
 }

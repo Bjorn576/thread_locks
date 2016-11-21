@@ -149,20 +149,16 @@ void *tlocktest()
       localc++;
     }
 
-    //printf("Locking lock\n");
     my_queuelock_lock(&tlock);
-    //printf("Locked\n");
-    //my_queuelock_lock(&tlock);
-    //my_queuelock_lock(&tlock);
+    my_queuelock_lock(&tlock);
+    my_queuelock_lock(&tlock);
 
     for(j=0;j<OperationsInsideCS;j++)
     {
       c++;
     }
-    //printf("Unlocking Lock\n");
     my_queuelock_unlock(&tlock);
-    //printf("Unlocked\n");
-    //my_queuelock_unlock(&tlock);
+    my_queuelock_unlock(&tlock);
     //my_queuelock_unlock(&tlock);
   }
 }
@@ -416,43 +412,46 @@ if(testID == 0 || testID == 5)
 }
 
 //ticket_lock testing
-if(testID == 6)
+if(testID == 0 || testID == 6)
 {
-
-  struct timespec start;
-  struct timespec stop;
-  unsigned long long result;
-
-  c=0;
-  my_queuelock_init(&tlock);
-
-  pthread_t *threads = (pthread_t* )malloc(sizeof(pthread_t)*numThreads);
-  int rt;
-  int i;
-
-  clock_gettime(CLOCK_MONOTONIC, &start);
-  for(i=0;i<numThreads;i++)
+  int p;
+  unsigned long long average = 0;
+  FILE* f = fopen("mymutex.dat", "w");
+  for(p=0;p<10;p++)
   {
-    if( rt=(pthread_create( threads+i, NULL, &tlocktest, NULL)) )
+    struct timespec start;
+    struct timespec stop;
+    unsigned long long result;
+
+    c=0;
+    my_queuelock_init(&tlock);
+
+    pthread_t *threads = (pthread_t* )malloc(sizeof(pthread_t)*numThreads);
+    int rt;
+    int i;
+
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    for(i=0;i<numThreads;i++)
     {
-       printf("Thread creation failed: %d\n", rt);
-       return -1;
+      if( rt=(pthread_create( threads+i, NULL, &tlocktest, NULL)) )
+      {
+         printf("Thread creation failed: %d\n", rt);
+         return -1;
+      }
     }
-    printf("Thread created\n");
-  }
 
-  for(i=0;i<numThreads;i++)
-  {
-    pthread_join(threads[i], NULL);
-    printf("Thread Joined\n");
+    for(i=0;i<numThreads;i++)
+    {
+      pthread_join(threads[i], NULL);
+    }
+    clock_gettime(CLOCK_MONOTONIC, &stop);
+    result = timespecDiff(&stop, &start)/numItterations;
+    fprintf(f, "%d %llu\n", p, result);
+    average += result;
+    free(threads);
   }
-  clock_gettime(CLOCK_MONOTONIC, &stop);
-
-  printf("DONE TEST ON ticketlock\n");
-  printf("Average lock/unlock with %d iterations in the critical section is %lluns\n", OperationsInsideCS, timespecDiff(&stop, &start)/numItterations);
-  free(threads);
+  printf("Average of all runs on ticketlock was %lluns\n", average/10);
 }
-
 
 
 	return 0;
