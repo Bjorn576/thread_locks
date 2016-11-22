@@ -150,16 +150,12 @@ void *tlocktest()
     }
 
     my_queuelock_lock(&tlock);
-    //my_queuelock_lock(&tlock);
-    //my_queuelock_lock(&tlock);
 
     for(j=0;j<OperationsInsideCS;j++)
     {
       c++;
     }
     my_queuelock_unlock(&tlock);
-    //my_queuelock_unlock(&tlock);
-    //my_queuelock_unlock(&tlock);
   }
 }
 

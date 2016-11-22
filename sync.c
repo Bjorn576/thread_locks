@@ -46,12 +46,11 @@ int my_spinlock_unlock(my_spinlock_t *lock)
       //if lcount is 0 then we have undone all the locks called by a particular thread
       if(lock->lcount == 0)
       {
-	lock->owner = 0;
-	lock->val = 0;
+	       lock->owner = 0;
+         lock->val = 0;
       }
       return 0;
     }
-    printf("Not the owner\n");
     return 1;
   }
   else
@@ -72,8 +71,6 @@ int my_spinlock_lockTAS(my_spinlock_t *lock)
 
   lock->lcount++;
   lock->owner = tid;
-  //Should ^ be implemented like below?
-  //cas(&(lock->owner), 0, tid);
   return 0;
 }
 
@@ -90,7 +87,6 @@ int my_spinlock_lockTTAS(my_spinlock_t *lock)
 
   while(1)
   {
-
     while(lock->val);
     if(!tas(&(lock->val)))
     {
@@ -184,7 +180,6 @@ int my_mutex_lock(my_mutex_t *lock)
     {
       lock->lcount++;
       lock->owner = pthread_self();
-      //printf("LOCKED\n");
       return 0;
     }
 
@@ -192,8 +187,6 @@ int my_mutex_lock(my_mutex_t *lock)
     sleep = currdelay * rand() / RAND_MAX;
 
     //Sleep for that time
-    //printf("Sleep returned : %llu\n", nanosleep(&delay, &test));
-    //printf("Return value of usleep is: %d\n", usleep(sleep));
     usleep(sleep);
 
     if(currdelay < MAX_DELAY)
@@ -289,6 +282,7 @@ int my_queuelock_trylock(my_queuelock_t *lock)
   if(lock == NULL)
     return -1;
 
+  //Val for this lock is just a flag for trylock
   if(!tas(&(lock->val)))
   {
     lock->lcount++;
