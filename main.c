@@ -20,8 +20,10 @@ my_queuelock_t tlock;
 pthread_spinlock_t pspin;
 pthread_mutex_t count_mutex;
 
+//Initialize test variables
 int numThreads, numItterations, OperationsOutsideCS, OperationsInsideCS, testID;
 
+//Pthread_spinlock test for each thread to call
 void *pthreadSpinTest()
 {
 
@@ -51,7 +53,7 @@ void *pthreadSpinTest()
 
 }
 
-
+//TTAS test for each thread to call
 void *ttastest()
 {
   int i;
@@ -77,6 +79,8 @@ void *ttastest()
 
     }
 }
+
+//pthread mutex test for each thread to call
 void *pthreadMutexTest()
 {
 
@@ -109,7 +113,7 @@ void *pthreadMutexTest()
 
 
 
-
+//TAS spinlock test for each thread to call
 void *spinlocktest()
 {
 
@@ -137,6 +141,7 @@ void *spinlocktest()
 
 }
 
+//Ticketlock test for each thread to call
 void *tlocktest()
 {
   int i;
@@ -159,6 +164,7 @@ void *tlocktest()
   }
 }
 
+//Mutex lock test for each thread to call
 void *mlocktest()
 {
 
@@ -193,6 +199,7 @@ if (testID == 0 || testID == 1 ) /*Pthread Mutex*/
 {
   int p;
   unsigned long long average = 0;
+  //Open file to write test data
   FILE* f = fopen("pmutex.dat", "w");
   for(p=0;p<10;p++)
   {
@@ -241,6 +248,7 @@ if(testID == 0 || testID == 2) /*Pthread Spinlock*/
 {
   int p;
   unsigned long long average = 0;
+  //Open file to write test data
   FILE* f = fopen("pspin.dat", "w");
   for(p=0;p<10;p++)
   {
@@ -284,6 +292,7 @@ if(testID == 0 || testID == 3) /*MySpinlockTAS*/
 {
   int p;
   unsigned long long average = 0;
+  //Open file to write test data
   FILE* f = fopen("myspin.dat", "w");
   for(p=0;p<10;p++)
   {
@@ -325,6 +334,7 @@ if(testID == 0 || testID == 4)
 {
   int p;
   unsigned long long average = 0;
+  //Open file to write test data
   FILE* f = fopen("ttasspin.dat", "w");
   for(p=0;p<10;p++)
   {
@@ -362,6 +372,7 @@ if(testID == 0 || testID == 4)
   printf("Average of all runs on TTAS was %llu\n", average /10);
 }
 
+//My_Mutex lock testing
 if(testID == 0 || testID == 5)
 {
   int p;
@@ -372,7 +383,7 @@ if(testID == 0 || testID == 5)
     struct timespec start;
     struct timespec stop;
     unsigned long long result;
-    //my_mutex_lock testing
+   
     c = 0;
     my_mutex_init(&mlock);
     pthread_t *threads = (pthread_t* )malloc(sizeof(pthread_t)*numThreads);
