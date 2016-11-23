@@ -42,6 +42,7 @@ void *pthreadSpinTest()
 		  }
 
 		  pthread_spin_lock(&pspin);
+
   		for(k=0;k<workInsideCS;k++)/*How much work is done inside the CS*/
 		  {
   			c++;
@@ -155,7 +156,6 @@ void *tlocktest()
     }
 
     my_queuelock_lock(&tlock);
-
     for(j=0;j<OperationsInsideCS;j++)
     {
       c++;
@@ -383,7 +383,7 @@ if(testID == 0 || testID == 5)
     struct timespec start;
     struct timespec stop;
     unsigned long long result;
-   
+
     c = 0;
     my_mutex_init(&mlock);
     pthread_t *threads = (pthread_t* )malloc(sizeof(pthread_t)*numThreads);

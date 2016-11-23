@@ -19,10 +19,13 @@
  * Spinlock routines
  */
 
+/* Functions return -1 if the lock that was passed to them doesn't exist (is NULL) */
+
 int my_spinlock_init(my_spinlock_t *lock)
 {
   if(lock != NULL)
   {
+    //Set lock variables to their initial values (same process for every lock)
     lock->owner = 0;
     lock->val = 0;
     lock->lcount = 0;
@@ -49,8 +52,10 @@ int my_spinlock_unlock(my_spinlock_t *lock)
 	       lock->owner = 0;
          lock->val = 0;
       }
+      //Return 0 on succesful unlock
       return 0;
     }
+    //Return 1 if the lock isn't owned by the thread
     return 1;
   }
   else
@@ -60,10 +65,14 @@ int my_spinlock_unlock(my_spinlock_t *lock)
 
 int my_spinlock_lockTAS(my_spinlock_t *lock)
 {
+  if (lock == NULL)
+    return -1;
+
   pthread_t tid = pthread_self();
   if(pthread_equal(tid, lock->owner))
   {
     lock->lcount++;
+    //Return 1 if thread calls lock again
     return 1;
   }
 
@@ -77,6 +86,8 @@ int my_spinlock_lockTAS(my_spinlock_t *lock)
 
 int my_spinlock_lockTTAS(my_spinlock_t *lock)
 {
+  if(lock == NULL)
+    return -1;
   pthread_t tid = pthread_self();
   //If thread is trying to get a lock it already has
   if(pthread_equal(tid, lock->owner))
@@ -96,7 +107,6 @@ int my_spinlock_lockTTAS(my_spinlock_t *lock)
     }
 
   }
-  return 1;
 }
 
 //Does not spin but returns 1 if it acquires spin-lock on first try, 0 if it doesn't, and -1 if the lock was NULL
@@ -104,10 +114,11 @@ int my_spinlock_trylock(my_spinlock_t *lock)
 {
   if(lock != NULL)
   {
-    if(!tas(&(lock->val)))
+    pthread_t tid = pthread_self();
+    if(!tas(&(lock->val)) || pthread_equal(tid, lock->owner))
     {
       lock->lcount++;
-      lock->owner = pthread_self();
+      lock->owner = tid;
       return 1;
     }
     else
@@ -198,10 +209,11 @@ int my_mutex_trylock(my_mutex_t *lock)
 {
   if(lock != NULL)
   {
-    if(!tas(&(lock->val)))
+    pthread_t tid = pthread_self();
+    if(!tas(&(lock->val)) || pthread_equal(tid, lock->owner))
     {
-     //Should a thread be able to trylock it's own lock?
       lock->lcount++;
+      lock->owner = tid;
       return 1;
     }
     else
@@ -282,10 +294,13 @@ int my_queuelock_trylock(my_queuelock_t *lock)
   if(lock == NULL)
     return -1;
 
+  pthread_t tid = pthread_self();
   //Val for this lock is just a flag for trylock
-  if(!tas(&(lock->val)))
+
+  if(!tas(&(lock->val)) || lock->owner == tid)
   {
     lock->lcount++;
+    lock->owner = tid;
     return 1;
   }
   else
