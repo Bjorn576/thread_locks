@@ -12,8 +12,8 @@
 #include <stdio.h>
 #include <time.h>
 #include <unistd.h>
-#define MIN_DELAY 1
-#define MAX_DELAY 10
+#define MIN_DELAY 100
+#define MAX_DELAY 10000
 
 /*
  * Spinlock routines
@@ -21,6 +21,7 @@
 
 /* Functions return -1 if the lock that was passed to them doesn't exist (is NULL) */
 
+long sleepcount;
 int my_spinlock_init(my_spinlock_t *lock)
 {
   if(lock != NULL)
@@ -171,7 +172,7 @@ int my_mutex_lock(my_mutex_t *lock)
 {
   if(lock == NULL)
     return -1;
-
+  
   pthread_t tid = pthread_self();
   if(pthread_equal(tid, lock->owner))
   {
@@ -199,9 +200,12 @@ int my_mutex_lock(my_mutex_t *lock)
 
     //Sleep for that time
     usleep(sleep);
-
+    
     if(currdelay < MAX_DELAY)
+    {
       currdelay *= 2;
+      printf("Currdelay has been updated to: %d\n", currdelay);
+    }
   }
 }
 
