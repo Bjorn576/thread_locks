@@ -190,7 +190,7 @@ int my_mutex_lock(my_mutex_t *lock)
     if(!tas(&(lock->val)))
     {
       lock->lcount++;
-      lock->owner = pthread_self();
+      lock->owner = tid;
       return 0;
     }
 
@@ -250,10 +250,11 @@ int my_queuelock_unlock(my_queuelock_t *lock)
 
   if(pthread_equal(pthread_self(), lock->owner))
   {
+    //decrement number of locks acquired by particular thread.
     lock->lcount--;
     if(lock->lcount == 0)
     {
-      //increment the 'nowserving' ticket, set owner to nothing, and decrement number of locks acquired by particular thread.
+      //increment the 'nowserving' ticket, set owner to nothing, and
       lock->owner = 0;
       lock->val = 0;
       fna(&(lock->tdequeue), 1);
@@ -281,7 +282,7 @@ int my_queuelock_lock(my_queuelock_t *lock)
 
   //busy wait if my_ticket is not 'being served'
   //if this check fails, the thread gives up the CPU to make sure all threads are able to check this condition in an acceptable amount of time
-  while(my_ticket != lock->tdequeue || lock->val == 1)
+  while(my_ticket != lock->tdequeue)
     pthread_yield();
   //Only one thread can leave this loop at a given moment because of the queue so don't need condition
   lock->owner = tid;
@@ -295,8 +296,8 @@ int my_queuelock_trylock(my_queuelock_t *lock)
     return -1;
 
   pthread_t tid = pthread_self();
-  //Val for this lock is just a flag for trylock
 
+  //Val for this lock is just a flag for trylock
   if(!tas(&(lock->val)) || lock->owner == tid)
   {
     lock->lcount++;
