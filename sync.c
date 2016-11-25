@@ -204,7 +204,6 @@ int my_mutex_lock(my_mutex_t *lock)
     if(currdelay < MAX_DELAY)
     {
       currdelay *= 2;
-      printf("Currdelay has been updated to: %d\n", currdelay);
     }
   }
 }
